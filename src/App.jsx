@@ -725,9 +725,12 @@ const SYNAPSE_NET_ABI = [
 // MULTI-CHAIN CONTRACT ADDRESSES
 const CONTRACT_ADDRESSES = {
   // BlockDAG Networks
-  "0x1": "0xB9Dc410368Ab19AdA1574b5d8DCB25a1367A0157", // Ethereum Mainnet (if using compatible address)
+  "0x1": "0xB9Dc410368Ab19AdA1574b5d8DCB25a1367A0157", // Ethereum Mainnet
   "0xaa36a7": "0xB9Dc410368Ab19AdA1574b5d8DCB25a1367A0157", // Sepolia Testnet
-  // Add more BlockDAG chain IDs as you discover them
+  // BlockDAG Networks - Replace these with actual BlockDAG chain IDs
+  "0x13881": "0xB9Dc410368Ab19AdA1574b5d8DCB25a1367A0157", // Polygon Mumbai (placeholder)
+  "0x89": "0xB9Dc410368Ab19AdA1574b5d8DCB25a1367A0157", // Polygon Mainnet (placeholder)
+  // Add actual BlockDAG chain IDs when you get them
 };
 
 // Network names for display
@@ -736,7 +739,10 @@ const NETWORK_NAMES = {
   "0xaa36a7": "Sepolia Testnet", 
   "0x5": "Goerli Testnet",
   "0x539": "Localhost",
-  // Add BlockDAG network names when you get the chain IDs
+  // BlockDAG Networks - Replace these with actual BlockDAG network names
+  "0x13881": "Polygon Mumbai", // Placeholder
+  "0x89": "Polygon Mainnet", // Placeholder
+  // Add actual BlockDAG network names when you get them
 };
 
 const CONTRACT_ADDRESS = "0xB9Dc410368Ab19AdA1574b5d8DCB25a1367A0157";
@@ -758,7 +764,7 @@ function App() {
   }, []);
 
   const setupNetworkListeners = () => {
-    if (window.ethereum) {
+    if (typeof window.ethereum !== 'undefined') {
       window.ethereum.on('chainChanged', (chainId) => {
         console.log('Chain changed to:', chainId);
         setCurrentChainId(chainId);
@@ -778,8 +784,44 @@ function App() {
     }
   };
 
+  const switchToBlockDAGNetwork = async () => {
+    try {
+      // Replace with actual BlockDAG chain ID
+      const blockDAGChainId = '0xAA36A7'; // Using Sepolia as placeholder
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: blockDAGChainId }],
+      });
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: '0xAA36A7', // Replace with actual BlockDAG chainId
+                chainName: 'BlockDAG Network',
+                rpcUrls: ['https://rpc.blockdag.network'], // Replace with actual RPC URL
+                nativeCurrency: {
+                  name: 'BDAG',
+                  symbol: 'BDAG',
+                  decimals: 18,
+                },
+                blockExplorerUrls: ['https://explorer.blockdag.network'], // Replace with actual block explorer
+              },
+            ],
+          });
+        } catch (addError) {
+          console.error('Error adding BlockDAG network:', addError);
+          alert('Failed to add BlockDAG network. Please add it manually to MetaMask.');
+        }
+      }
+      console.error('Error switching to BlockDAG network:', switchError);
+    }
+  };
+
   const checkWalletConnection = async () => {
-    if (window.ethereum) {
+    if (typeof window.ethereum !== 'undefined') {
       try {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const accounts = await provider.listAccounts();
@@ -803,7 +845,7 @@ function App() {
     try {
       setIsLoading(true);
       
-      if (!window.ethereum) {
+      if (typeof window.ethereum === 'undefined') {
         alert("Please install MetaMask to use SynapseNet!");
         return;
       }
@@ -1069,6 +1111,11 @@ function App() {
               <button className="btn btn-secondary" onClick={registerNode} disabled={isLoading}>
                 {isLoading ? <div className="spinner"></div> : "🔧 Register Node"}
               </button>
+              {!contract && (
+                <button className="btn btn-warning" onClick={switchToBlockDAGNetwork}>
+                  🔄 Switch to BlockDAG
+                </button>
+              )}
             </nav>
 
             <div className="stats-grid">
